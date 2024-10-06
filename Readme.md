@@ -2,7 +2,7 @@
 
 Right now, we can build a query and a program by calling the procedures on the Machine struct:
 
-Example (exercise 2.7):
+Example (exercise 2.3):
 
 ``` rust
 use wam_l0::*;
