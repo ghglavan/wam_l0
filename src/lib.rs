@@ -161,11 +161,10 @@ pub struct Machine {
 impl Machine {
     /// Create a new machine with heap_size heap cells and ref_size register cells
     pub fn new(heap_size: usize, ref_size: usize) -> Self {
-        let heap = vec![Cell::Ref(Address(AddressType::Heap, usize::MAX)); heap_size];
         let registers = vec![Cell::Ref(Address(AddressType::Register, usize::MAX)); ref_size];
 
         Self {
-            heap,
+            heap: Vec::with_capacity(heap_size),
             registers,
 
             s: Address(AddressType::Heap, 0),
@@ -194,22 +193,24 @@ impl Machine {
 
     /// The put_structure procedure as defined in WAM
     pub fn put_structure(&mut self, f: Func, x_i: usize) {
-        self.heap[self.h] = Cell::Str(Address(AddressType::Heap, self.h + 1));
-        self.heap[self.h + 1] = Cell::Fun(f);
+        self.heap
+            .push(Cell::Str(Address(AddressType::Heap, self.h + 1)));
+        self.heap.push(Cell::Fun(f));
         self.registers[x_i] = self.heap[self.h].clone();
         self.h += 2;
     }
 
     /// The set_variable procedure as defined in WAM
     pub fn set_variable(&mut self, x_i: usize) {
-        self.heap[self.h] = Cell::Ref(Address(AddressType::Heap, self.h));
+        self.heap
+            .push(Cell::Ref(Address(AddressType::Heap, self.h)));
         self.registers[x_i] = self.heap[self.h].clone();
         self.h += 1;
     }
 
     /// The set_value procedure as defined in WAM
     pub fn set_value(&mut self, x_i: usize) {
-        self.heap[self.h] = self.registers[x_i].clone();
+        self.heap.push(self.registers[x_i].clone());
         self.h += 1;
     }
 
@@ -243,8 +244,9 @@ impl Machine {
         let addr = self.deref(&Address(AddressType::Register, x_i));
         match self.store(&addr) {
             Cell::Ref(_) => {
-                self.heap[self.h] = Cell::Str(Address(AddressType::Heap, self.h + 1));
-                self.heap[self.h + 1] = Cell::Fun(f);
+                self.heap
+                    .push(Cell::Str(Address(AddressType::Heap, self.h + 1)));
+                self.heap.push(Cell::Fun(f));
 
                 self.bind(&addr, &Address(AddressType::Heap, self.h))?;
 
@@ -276,7 +278,8 @@ impl Machine {
         if !self.w {
             self.registers[x_i] = self.heap[self.s.1].clone();
         } else {
-            self.heap[self.h] = Cell::Ref(Address(AddressType::Heap, self.h + 1));
+            self.heap
+                .push(Cell::Ref(Address(AddressType::Heap, self.h + 1)));
             self.registers[x_i] = self.heap[self.h].clone();
             self.h += 1;
         }
@@ -334,7 +337,8 @@ impl Machine {
         if !self.w {
             self.unify(&Address(AddressType::Register, x_i), &self.s.clone())?;
         } else {
-            self.heap[self.h] = Cell::Ref(Address(AddressType::Register, x_i));
+            self.heap
+                .push(Cell::Ref(Address(AddressType::Register, x_i)));
             self.h += 1;
         }
 
